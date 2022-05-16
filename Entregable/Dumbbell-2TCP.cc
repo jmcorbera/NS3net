@@ -1,5 +1,14 @@
-//  TOPOLOGIA DUMBBELL:
 
+//  TOPOLOGIA DUMBBELL:
+//
+//  TCP                    TCP
+//     \                  / 
+//      \ +--+      +--+ /
+//        |S1| ---- |S2|
+//      / +--+      +--+ \ 
+//     /                  \ 
+//  TCP                    TCP
+//
 
 #include <iostream>
  
