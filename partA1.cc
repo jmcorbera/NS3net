@@ -300,6 +300,27 @@ int main(){
 	Simulator::Run();
 	flowmon->CheckForLostPackets();
 
+//Ptr<OutputStreamWrapper> streamTP = asciiTraceHelper.CreateFileStream("application_6_a.tp");
+	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmonHelper.GetClassifier());
+	std::map<FlowId, FlowMonitor::FlowStats> stats = flowmon->GetFlowStats();
+
+	for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin(); i != stats.end(); ++i) {
+		Ipv4FlowClassifier::FiveTuple tempClassifier = classifier->FindFlow (i->first);
+
+if(tempClassifier.sourceAddress=="100.101.3.1"){
+            fprintf(streamPacketDropData3, "TCP Westwood+ flow %s (100.101.3.1 -> 100.101.7.1)\n",(std::to_string( i->first)).c_str());
+            fprintf(streamPacketDropData3, "Total Packet Lost:%s\n",(std::to_string( i->second.lostPackets)).c_str() );
+            fprintf(streamPacketDropData3, "Packet Lost due to buffer overflow:%s\n",(std::to_string( packetsDropped[3] )).c_str() );
+            fprintf(streamPacketDropData3, "Packet Lost due to Congestion:%s\n",(std::to_string( i->second.lostPackets - packetsDropped[3] )).c_str() );
+            fprintf(streamPacketDropData3, "Maximum throughput(in kbps):%s\n",(std::to_string( Throughput["/NodeList/7/$ns3::Ipv4L3Protocol/Rx"] )).c_str() );
+            fprintf(streamPacketDropData3, "Total Packets transmitted:%s\n",(std::to_string( totalPackets )).c_str() );
+            fprintf(streamPacketDropData3, "Packets Successfully Transferred:%s\n",(std::to_string(  totalPackets- i->second.lostPackets )).c_str() );
+            fprintf(streamPacketDropData3, "Percentage of packet loss (total):%s\n",(std::to_string( double(i->second.lostPackets*100)/double(totalPackets) )).c_str() );
+		    fprintf(streamPacketDropData3, "Percentage of packet loss (due to buffer overflow):%s\n",(std::to_string(  double(packetsDropped[3]*100)/double(totalPackets))).c_str() );
+		    fprintf(streamPacketDropData3, "Percentage of packet loss (duee to congestion):%s\n",(std::to_string( double((i->second.lostPackets - packetsDropped[3])*100)/double(totalPackets))).c_str() );
+        }
+
+}
 	//flowmon->SerializeToXmlFile("application_6_a.flowmon", true, true);
 	std::cout << "Simulation finished" << std::endl;
 	Simulator::Destroy();
