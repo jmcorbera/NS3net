@@ -120,9 +120,7 @@ void GoodPutData(FILE *stream, double startTime, std::string context, Ptr<const 
 	//getting goodput by calculating the average data transfer rate
     double speed = (((TotalBytesAtSink[addr] * 8.0) / 1024)/(timeNow-startTime));
     fprintf(stream, "%s  %s\n",(std::to_string( timeNow-startTime).c_str() ) , (std::to_string(speed )).c_str() );
-
-    
-
+  
 }
 
 void ThroughtPutData(FILE *stream, double startTime, std::string context, Ptr<const Packet> p, Ptr<Ipv4> ipv4, uint interface) {
@@ -140,7 +138,6 @@ void ThroughtPutData(FILE *stream, double startTime, std::string context, Ptr<co
     if(Throughput[context] < curSpeed)
 			Throughput[context] = curSpeed;
 }
-
 
 Ptr<Socket> WestwoodFlow(Address sinkAddress, 
 					uint sinkPort, 
@@ -175,71 +172,6 @@ Ptr<Socket> WestwoodFlow(Address sinkAddress,
 	return TcpSocket;
 }
 
-Ptr<Socket> YeahFlow(Address sinkAddress, 
-					uint sinkPort, 
-					Ptr<Node> hostNode, 
-					Ptr<Node> sinkNode, 
-					double startTime, 
-					double stopTime,
-					uint packetSize,
-					uint totalPackets,
-					string dataRate,
-					double appStartTime,
-					double appStopTime) {
-
-    Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpYeah::GetTypeId()));
-	
-	PacketSinkHelper packetSinkHelper("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), sinkPort));
-	ApplicationContainer sinkApps = packetSinkHelper.Install(sinkNode);
-	sinkApps.Start(Seconds(startTime));
-	sinkApps.Stop(Seconds(stopTime));
-
-	Ptr<Socket> TcpSocket = Socket::CreateSocket(hostNode, TcpSocketFactory::GetTypeId());
-
-    //Run the app to get the data
-	Ptr<MyApp> app = CreateObject<MyApp>();
-	app->Setup(TcpSocket, sinkAddress, packetSize, totalPackets, DataRate(dataRate));
-	hostNode->AddApplication(app);
-	app->SetStartTime(Seconds(appStartTime));
-	app->SetStopTime(Seconds(appStopTime));
-
-	return TcpSocket;
-}
-
-
-Ptr<Socket> HyblaFlow(Address sinkAddress, 
-					uint sinkPort, 
-					Ptr<Node> hostNode, 
-					Ptr<Node> sinkNode, 
-					double startTime, 
-					double stopTime,
-					uint packetSize,
-					uint totalPackets,
-					string dataRate,
-					double appStartTime,
-					double appStopTime) {
-
-
-    Config::SetDefault("ns3::TcpL4Protocol::SocketType", TypeIdValue(TcpYeah::GetTypeId()));
-	
-	PacketSinkHelper packetSinkHelper("ns3::TcpSocketFactory", InetSocketAddress(Ipv4Address::GetAny(), sinkPort));
-	ApplicationContainer sinkApps = packetSinkHelper.Install(sinkNode);
-	sinkApps.Start(Seconds(startTime));
-	sinkApps.Stop(Seconds(stopTime));
-
-	Ptr<Socket> TcpSocket = Socket::CreateSocket(hostNode, TcpSocketFactory::GetTypeId());
-
-    //Run the app to get the data
-	Ptr<MyApp> app = CreateObject<MyApp>();
-	app->Setup(TcpSocket, sinkAddress, packetSize, totalPackets, DataRate(dataRate));
-	hostNode->AddApplication(app);
-	app->SetStartTime(Seconds(appStartTime));
-	app->SetStopTime(Seconds(appStopTime));
-
-	return TcpSocket;
-}
-
-
 
 int main(){
 
@@ -261,17 +193,15 @@ int main(){
 
 	//Mode: Whether to use Bytes (see MaxBytes) or Packets (see MaxPackets) as the maximum queue size metric. 
 
-
-
 	PointToPointHelper p2pHTR, p2pRTR;
 
     p2pHTR.SetDeviceAttribute("DataRate", StringValue(rateHR));
 	p2pHTR.SetChannelAttribute("Delay", StringValue(latencyHR));
-	p2pHTR.SetQueue("ns3::DropTailQueue", "MaxSize", QueueSizeValue(QueueSize("100p")));/*reemplazamos el max packet por MaxSize y el tercer argumento, para corregir este error
+	p2pHTR.SetQueue("ns3::DropTailQueue", "MaxSize", QueueSizeValue(QueueSize("200p")));/*reemplazamos el max packet por MaxSize y el tercer argumento, para corregir este error
 	msg="Invalid attribute set (Mode) on ns3::DropTailQueue<Packet>", file=../src/core/model/object-factory.cc, line=*/
 	p2pRTR.SetDeviceAttribute("DataRate", StringValue(rateRR));
 	p2pRTR.SetChannelAttribute("Delay", StringValue(latencyRR));
-	p2pRTR.SetQueue("ns3::DropTailQueue", "MaxSize", QueueSizeValue(QueueSize("100p")));//por el momento ponemos la cantidad de paquetes a mano.
+	p2pRTR.SetQueue("ns3::DropTailQueue", "MaxSize", QueueSizeValue(QueueSize("200p")));//por el momento ponemos la cantidad de paquetes a mano.
 
 
     NodeContainer nodes;
@@ -304,9 +234,6 @@ int main(){
     n_h5r2.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em));
     n_h6r2.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em));
 
-    
-
-
     std::cout << "Adding IP addresses" << std::endl;
     Ipv4AddressHelper ipv4;
     ipv4.SetBase ("100.101.1.0", "255.255.255.0");
@@ -333,61 +260,13 @@ int main(){
 
     //////////////////////////////////////////////////////////////////////////////
 
-	
-
     AsciiTraceHelper asciiTraceHelper;
-
-    FILE * streamPacketDropData1,*streamCongestionWindowData1,*streamThroughputData1,*streamGoodPutData1;
-    streamPacketDropData1 = fopen ("A_Yeah_app3_h1_h4_congestion_loss.txt","w");
-    streamCongestionWindowData1 = fopen ("A_Yeah_app3_h1_h4_cwnd.txt","w");
-    streamThroughputData1 = fopen ("A_Yeah_app3_h1_h4_tp.txt","w");
-    streamGoodPutData1 = fopen ("A_Yeah_app3_h1_h4_gp.txt","w"); 
-
-    //tcpYeah stimulation
-	Ptr<Socket> TcpYeahSocket = YeahFlow(InetSocketAddress( i_h4r2.GetAddress(0), port), port, nodes.Get(0), nodes.Get(5), startTime, startTime+runningTime, packetSize, totalPackets, transferSpeed, startTime, startTime+runningTime);
-	
-	// Measure PacketSinks
-	string sinkYeah1 = "/NodeList/5/ApplicationList/0/$ns3::PacketSink/Rx";
-	Config::Connect(sinkYeah1, MakeBoundCallback(&GoodPutData, streamGoodPutData1, startTime));
-
-	string sinkYeah2 = "/NodeList/5/$ns3::Ipv4L3Protocol/Rx";
-	Config::Connect(sinkYeah2, MakeBoundCallback(&ThroughtPutData, streamThroughputData1, startTime));
-
-    TcpYeahSocket->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, streamPacketDropData1, startTime, 1));
-    TcpYeahSocket->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CongestionWindowUpdater, streamCongestionWindowData1, startTime));
-
-
+    
     // //increment start TIme
 	startTime += runningTime;
 
-
-    FILE * streamPacketDropData2,*streamCongestionWindowData2,*streamThroughputData2,*streamGoodPutData2;
-    streamPacketDropData2 = fopen ("A_Hybla_app3_h2_h5_congestion_loss.txt","w");
-    streamCongestionWindowData2 = fopen ("A_Hybla_app3_h2_h5_cwnd.txt","w");
-    streamThroughputData2 = fopen ("A_Hybla_app3_h2_h5_tp.txt","w");
-    streamGoodPutData2 = fopen ("A_Hybla_app3_h2_h5_gp.txt","w"); 
-    // //tcpHybla Simulation
-
-	Ptr<Socket> TcpHyblaSocket = HyblaFlow(InetSocketAddress(i_h5r2.GetAddress(0), port), port, nodes.Get(1), nodes.Get(6), startTime, startTime+runningTime, packetSize, totalPackets, transferSpeed, startTime, startTime+runningTime);
-
-
-	// Measure PacketSinks
-	string sinkHybla1 = "/NodeList/6/ApplicationList/0/$ns3::PacketSink/Rx";
-	Config::Connect(sinkHybla1, MakeBoundCallback(&GoodPutData, streamGoodPutData2, startTime));
-
-	string sinkHybla2 = "/NodeList/6/$ns3::Ipv4L3Protocol/Rx";
-	Config::Connect(sinkHybla2, MakeBoundCallback(&ThroughtPutData, streamThroughputData2, startTime));
-
-	TcpHyblaSocket->TraceConnectWithoutContext("Drop", MakeBoundCallback (&packetDrop, streamPacketDropData2, startTime, 2));
-    TcpHyblaSocket->TraceConnectWithoutContext("CongestionWindow", MakeBoundCallback (&CongestionWindowUpdater, streamCongestionWindowData2, startTime));
-
-    //increment start TIme
-	startTime += runningTime;
-
-
-
     // //westWood Plus Stimulation
-
+//en esta parte crea los archivos de salida donde se van a encontrar los datos de la westWood
     FILE * streamPacketDropData3,*streamCongestionWindowData3,*streamThroughputData3,*streamGoodPutData3;
     streamPacketDropData3 = fopen ("A_Westwood_app3_h3_h6_congestion_loss.txt","w");
     streamCongestionWindowData3 = fopen ("A_Westwood_app3_h3_h6_cwnd.txt","w");
@@ -421,43 +300,14 @@ int main(){
 	Simulator::Run();
 	flowmon->CheckForLostPackets();
 
-	//Ptr<OutputStreamWrapper> streamTP = asciiTraceHelper.CreateFileStream("application_6_a.tp");
+//Ptr<OutputStreamWrapper> streamTP = asciiTraceHelper.CreateFileStream("application_6_a.tp");
 	Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier>(flowmonHelper.GetClassifier());
 	std::map<FlowId, FlowMonitor::FlowStats> stats = flowmon->GetFlowStats();
 
 	for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin(); i != stats.end(); ++i) {
 		Ipv4FlowClassifier::FiveTuple tempClassifier = classifier->FindFlow (i->first);
 
-        if (tempClassifier.sourceAddress=="100.101.1.1"){
-
-		    // *streamPacketDropData1->GetStream() << "Tcp Yeah Flow " << i->first  << " (" << (tempClassifier.sourceAddress) << " -> " << tempClassifier.destinationAddress << ")\n";
-		    fprintf(streamPacketDropData1, "TCP Yeah flow %s (100.101.1.1 -> 100.101.5.1)\n",(std::to_string( i->first)).c_str());
-            fprintf(streamPacketDropData1, "Total Packet Lost:%s\n",(std::to_string( i->second.lostPackets)).c_str() );
-            fprintf(streamPacketDropData1, "Packet Lost due to buffer overflow:%s\n",(std::to_string( packetsDropped[1] )).c_str() );
-            fprintf(streamPacketDropData1, "Packet Lost due to Congestion:%s\n",(std::to_string( i->second.lostPackets - packetsDropped[1] )).c_str() );
-            fprintf(streamPacketDropData1, "Maximum throughput(in kbps):%s\n",(std::to_string( Throughput["/NodeList/5/$ns3::Ipv4L3Protocol/Rx"] )).c_str() );
-            fprintf(streamPacketDropData1, "Total Packets transmitted:%s\n",(std::to_string( totalPackets )).c_str() );
-            fprintf(streamPacketDropData1, "Packets Successfully Transferred:%s\n",(std::to_string(  totalPackets- i->second.lostPackets )).c_str() );
-            fprintf(streamPacketDropData1, "Percentage of packet loss (total):%s\n",(std::to_string( double(i->second.lostPackets*100)/double(totalPackets) )).c_str() );
-		    fprintf(streamPacketDropData1, "Percentage of packet loss (due to buffer overflow):%s\n",(std::to_string(  double(packetsDropped[1]*100)/double(totalPackets))).c_str() );
-		    fprintf(streamPacketDropData1, "Percentage of packet loss (duee to congestion):%s\n",(std::to_string( double((i->second.lostPackets - packetsDropped[1])*100)/double(totalPackets))).c_str() );
-
- 
-	
-		}
-        else if(tempClassifier.sourceAddress=="100.101.2.1"){
-            fprintf(streamPacketDropData2, "TCP Hybla flow %s (100.101.2.1 -> 100.101.6.1)\n",(std::to_string( i->first)).c_str());
-            fprintf(streamPacketDropData2, "Total Packet Lost:%s\n",(std::to_string( i->second.lostPackets)).c_str() );
-            fprintf(streamPacketDropData2, "Packet Lost due to buffer overflow:%s\n",(std::to_string( packetsDropped[2] )).c_str() );
-            fprintf(streamPacketDropData2, "Packet Lost due to Congestion:%s\n",(std::to_string( i->second.lostPackets - packetsDropped[2] )).c_str() );
-            fprintf(streamPacketDropData2, "Maximum throughput(in kbps):%s\n",(std::to_string( Throughput["/NodeList/6/$ns3::Ipv4L3Protocol/Rx"] )).c_str() );
-            fprintf(streamPacketDropData2, "Total Packets transmitted:%s\n",(std::to_string( totalPackets )).c_str() );
-            fprintf(streamPacketDropData2, "Packets Successfully Transferred:%s\n",(std::to_string(  totalPackets- i->second.lostPackets )).c_str() );
-            fprintf(streamPacketDropData2, "Percentage of packet loss (total):%s\n",(std::to_string( double(i->second.lostPackets*100)/double(totalPackets) )).c_str() );
-		    fprintf(streamPacketDropData2, "Percentage of packet loss (due to buffer overflow):%s\n",(std::to_string(  double(packetsDropped[2]*100)/double(totalPackets))).c_str() );
-		    fprintf(streamPacketDropData2, "Percentage of packet loss (duee to congestion):%s\n",(std::to_string( double((i->second.lostPackets - packetsDropped[2])*100)/double(totalPackets))).c_str() );
-        }
-        else if(tempClassifier.sourceAddress=="100.101.3.1"){
+if(tempClassifier.sourceAddress=="100.101.3.1"){
             fprintf(streamPacketDropData3, "TCP Westwood+ flow %s (100.101.3.1 -> 100.101.7.1)\n",(std::to_string( i->first)).c_str());
             fprintf(streamPacketDropData3, "Total Packet Lost:%s\n",(std::to_string( i->second.lostPackets)).c_str() );
             fprintf(streamPacketDropData3, "Packet Lost due to buffer overflow:%s\n",(std::to_string( packetsDropped[3] )).c_str() );
@@ -470,8 +320,7 @@ int main(){
 		    fprintf(streamPacketDropData3, "Percentage of packet loss (duee to congestion):%s\n",(std::to_string( double((i->second.lostPackets - packetsDropped[3])*100)/double(totalPackets))).c_str() );
         }
 
-	}
-
+}
 	//flowmon->SerializeToXmlFile("application_6_a.flowmon", true, true);
 	std::cout << "Simulation finished" << std::endl;
 	Simulator::Destroy();
