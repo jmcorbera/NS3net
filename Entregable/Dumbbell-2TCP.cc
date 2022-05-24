@@ -28,7 +28,7 @@
 #include "functions.h"
 
 static ApplicationContainer clienteApps;
-//static uint32_t puerto;
+static uint32_t port;
 
 using namespace ns3;
 
@@ -37,19 +37,15 @@ NS_LOG_COMPONENT_DEFINE ("SOR2-TP2-Dumbbell-2TCP");
 
 OnOffHelper ON_OFF_ApplicationHelper (std::string factory, Ipv4Address ipv4RemoteAddress)
 {
-  uint32_t port = 1000;
-
-  OnOffHelper clienteHelper (factory, Address ());
-  clienteHelper.SetAttribute ("OnTime", StringValue ("ns3::UniformRandomVariable"));
-  clienteHelper.SetAttribute ("OffTime", StringValue ("ns3::UniformRandomVariable"));
+  OnOffHelper clientHelper (factory, Address ());
+  clientHelper.SetAttribute ("OnTime", StringValue ("ns3::UniformRandomVariable"));
+  clientHelper.SetAttribute ("OffTime", StringValue ("ns3::UniformRandomVariable"));
   
   //Formar un punto final (nodo Destino) de transporte ipv4, con ipv4 y puerto.
   AddressValue remoteAddress (InetSocketAddress (ipv4RemoteAddress, port));
-  clienteHelper.SetAttribute ("Remote", remoteAddress);
+  clientHelper.SetAttribute ("Remote", remoteAddress);
 
-  //clienteHelper.Install (OriginNode);
-  
-  return clienteHelper;
+  return clientHelper;
 }
 
 
@@ -59,7 +55,7 @@ int main (int argc, char *argv[])
   uint32_t  nReceivers = 3; 
   bool tracing = true;
 
-  //puerto = 1000;
+  port = 1000;
 
   std::string animFile = "SOR2-TP2-Dumbbell-2TCP-animation.xml" ;  
 
@@ -100,121 +96,35 @@ int main (int argc, char *argv[])
   //enrutamiento de los nodos en la simulación. Convierte todos los nodos de la simulación en enrutadores.
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   
-  ApplicationContainer clienteApps;
-  ApplicationContainer servidorApps;
-
-  uint32_t nodo0 = 0;
-  uint32_t nodo1 = 1;
-  uint32_t nodo2 = 2;
-
-  uint32_t puerto = 1000;
-
+  ApplicationContainer clientApps;
+  ApplicationContainer serverApps;
+  
   //--------------------------------------------------------------------------------------------------------------------------
-  //ON-OFF Application TCP
+  //ON-OFF Application TCP1
   // Facilita el trabajo con OnOffApplications (Envio de paquetes).
+  OnOffHelper clientHelper = ON_OFF_ApplicationHelper("ns3::TcpSocketFactory", d.GetRightIpv4Address (1));
+  clientApps.Add (clientHelper.Install (d.GetLeft (0)));
+  //ON-OFF Application TCP2
+  clientHelper = ON_OFF_ApplicationHelper("ns3::TcpSocketFactory", d.GetRightIpv4Address (2));
+  clientApps.Add (clientHelper.Install (d.GetLeft (1)));
 
-  //OnOffHelper clienteHelper ("ns3::TcpSocketFactory", Address ());
-  //clienteHelper.SetAttribute ("OnTime", StringValue ("ns3::UniformRandomVariable"));
-  //clienteHelper.SetAttribute ("OffTime", StringValue ("ns3::UniformRandomVariable"));
+  PacketSinkHelper serverHelper ("ns3::TcpSocketFactory",InetSocketAddress (d.GetRightIpv4Address (1), port));
+  serverApps.Add (serverHelper.Install (d.GetRight (1)));
+  PacketSinkHelper serverHelper2 ("ns3::TcpSocketFactory",InetSocketAddress (d.GetRightIpv4Address (2), port));
+  serverApps.Add (serverHelper2.Install (d.GetRight (2)));
 
-  OnOffHelper clienteHelper = ON_OFF_ApplicationHelper("ns3::TcpSocketFactory", d.GetRightIpv4Address (nodo1));
-  clienteApps.Add (clienteHelper.Install (d.GetLeft (nodo0)));
-
-  //Formar un punto final (nodo Destino) de transporte ipv4, con ipv4 y puerto.
-  //AddressValue remoteAddress (InetSocketAddress (d.GetRightIpv4Address (nodo1), puerto));
-  //clienteHelper.SetAttribute ("Remote", remoteAddress);
-  //Agrego a mi contenedor de APPs-Cliente, el nuevo cliente junto al puntero del nodo Origen.
-  //clienteApps.Add (clienteHelper.Install (d.GetLeft (nodo0)));
-
-  //Crea la aplicacion de tipo servidor/receptor, con nodo Destino y puerto.
-  PacketSinkHelper servidor ("ns3::TcpSocketFactory",InetSocketAddress (d.GetRightIpv4Address (nodo1), puerto));
-  //Agrego a mi contenedor de APPs-Servidor, el nuevo servidor junto al puntero y nodo Origen (En este caso = a nodo Destino).
-  servidorApps.Add (servidor.Install (d.GetRight (nodo1)));
-  //--------------------------------------------------------------------------------------------------------------------------
-  //ON-OFF Application TCP
-  //OnOffHelper clienteHelper2 ("ns3::TcpSocketFactory", Address ());
-  //clienteHelper2.SetAttribute ("OnTime", StringValue ("ns3::UniformRandomVariable"));
-  //clienteHelper2.SetAttribute ("OffTime", StringValue ("ns3::UniformRandomVariable"));
-
-  OnOffHelper clienteHelper2 = ON_OFF_ApplicationHelper("ns3::TcpSocketFactory", d.GetRightIpv4Address (nodo2));
-  clienteApps.Add (clienteHelper2.Install (d.GetLeft (nodo1)));
-
-  //AddressValue remoteAddress2 (InetSocketAddress (d.GetRightIpv4Address (nodo2), puerto));
-  //clienteHelper2.SetAttribute ("Remote", remoteAddress2);
-  //clienteApps.Add (clienteHelper2.Install (d.GetLeft (nodo1)));
-
-  PacketSinkHelper servidor2 ("ns3::TcpSocketFactory",InetSocketAddress (d.GetRightIpv4Address (nodo2), puerto));
-  servidorApps.Add (servidor2.Install (d.GetRight (nodo2)));
-  //--------------------------------------------------------------------------------------------------------------------------
-  //ON-OFF Application UDP
-  //OnOffHelper clienteHelper3 ("ns3::UdpSocketFactory", Address ());
-  //clienteHelper3.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1000.0]"));
-  //clienteHelper3.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
-
-  //AddressValue remoteAddress3 (InetSocketAddress (dumbbell.GetRightIpv4Address (nodo0), puerto));
-  //clienteHelper3.SetAttribute ("Remote", remoteAddress3);
-  //clienteApps.Add (clienteHelper3.Install (dumbbell.GetLeft (nodo2)));
-
-  //PacketSinkHelper servidor3 ("ns3::TcpSocketFactory",InetSocketAddress (dumbbell.GetRightIpv4Address (nodo0), puerto));
-  //servidorApps.Add (servidor3.Install (dumbbell.GetRight (nodo0)));
   //--------------------------------------------------------------------------------------------------------------------------
   //Comienzo y parada de paquetes enviados (Clientes(emisores) -> Servidores(receptores)).
-  clienteApps.Start (Seconds (0.0));
-  clienteApps.Stop (Seconds (30.0));
-  servidorApps.Start (Seconds (0.0));
-  servidorApps.Stop (Seconds (100.0));
-
-
-/* 
-  // Este helper Instala la aplicación ON/OFF en todos los nodos emisores
-  OnOffHelper clientHelper ("ns3::TcpSocketFactory", Address ());
-  clientHelper.SetAttribute ("OnTime", StringValue ("ns3::UniformRandomVariable"));
-  clientHelper.SetAttribute ("OffTime", StringValue ("ns3::UniformRandomVariable"));
-  ApplicationContainer clientApps;  
-
-  uint32_t puerto = 1000;
-  
-  for (uint32_t i = 0; i < ((d.RightCount () < d.LeftCount ()) ? d.RightCount () : d.LeftCount ()); ++i)
-    {
-      // Cree la aplicación ON/OFF para que envíe paquetes al mismo nodo receiver
-      // Formar un punto final (nodo Destino) de transporte ipv4, con ipv4 y puerto.
-      AddressValue remoteAddress (InetSocketAddress (d.GetLeftIpv4Address (i), puerto));
-      clientHelper.SetAttribute ("Remote", remoteAddress);
-      // Se Agrega al contenedor de Apps, el nuevo cliente junto al puntero del nodo Origen.
-      clientApps.Add (clientHelper.Install (d.GetRight (i)));
-    }  
-
   clientApps.Start (Seconds (0.0));
-  clientApps.Stop (Seconds (10.0));
-*/
+  clientApps.Stop (Seconds (50.0));
+  serverApps.Start (Seconds (0.0));
+  serverApps.Stop (Seconds (100.0));
 
   //Generacion de pcap's. - Captura de los paquetes de cada enlace (aristas).
     if (tracing)
     {
       p2pNode.EnablePcapAll ("SOR2-TP2-Dumbbell-2TCP", false);
-
-      /*
-      std::ofstream ascii;
-      Ptr<OutputStreamWrapper> ascii_wrap;
-      ascii.open ((prefix_file_name + "-ascii").c_str ());
-      ascii_wrap = new OutputStreamWrapper ((prefix_file_name + "-ascii").c_str (),
-                                            std::ios::out);
-      stack.EnableAsciiIpv4All (ascii_wrap);
-
-      Simulator::Schedule (Seconds (0.001), &TraceCwnd20, prefix_file_name + "-20-cwnd.data");
-      Simulator::Schedule (Seconds (0.001), &TraceSsThresh20, prefix_file_name + "-20-ssth.data");
-      Simulator::Schedule (Seconds (0.001), &TraceRtt20, prefix_file_name + "-20-rtt.data");
-      Simulator::Schedule (Seconds (0.001), &TraceRto20, prefix_file_name + "-20-rto.data");
-      Simulator::Schedule (Seconds (0.001), &TraceInFlight20, prefix_file_name + "-20-inflight.data");
-
-
-      Simulator::Schedule (Seconds (0.001), &TraceCwnd30, prefix_file_name + "-30-cwnd.data");
-      Simulator::Schedule (Seconds (0.001), &TraceSsThresh30, prefix_file_name + "-30-ssth.data");
-      Simulator::Schedule (Seconds (0.001), &TraceRtt30, prefix_file_name + "-30-rtt.data");
-      Simulator::Schedule (Seconds (0.001), &TraceRto30, prefix_file_name + "-30-rto.data");
-      Simulator::Schedule (Seconds (0.001), &TraceInFlight30, prefix_file_name + "-30-inflight.data");      
-      */
-      
+  
       std::ofstream ascii;
       std::string prefix_file_name = "SOR2-TP2-Dumbbell";
 
@@ -232,7 +142,6 @@ int main (int argc, char *argv[])
       
     }
 
-
   // Set the bounding box for animation
   d.BoundingBox (1, 1, 100, 100);
  
@@ -240,12 +149,11 @@ int main (int argc, char *argv[])
   AnimationInterface anim (animFile);
   anim.EnablePacketMetadata (); // Optional
   anim.EnableIpv4L3ProtocolCounters (Seconds (0), Seconds (10)); // Optional
-  
-  // Set up the actual simulation
-  //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
  
+  NS_LOG_INFO ("Starting Simulation...");
   Simulator::Run ();
   std::cout << "Animation Trace file created:" << animFile.c_str ()<< std::endl;
+  NS_LOG_INFO ("Finishing Simulation!");
   Simulator::Destroy ();
   return 0;                                
 }
