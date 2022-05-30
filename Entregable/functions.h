@@ -19,41 +19,31 @@ static Ptr<OutputStreamWrapper> cWndStream_n2i0;
 static Ptr<OutputStreamWrapper> ssThreshStream_n2i0;
 static bool first_SsThresh_n2i0 = true;
 
-static bool firstCwnd20 = true;
-
 static Ptr<OutputStreamWrapper> cWndStream_n3i0;
 static Ptr<OutputStreamWrapper> ssThreshStream_n3i0;
 static bool first_SsThresh_n3i0 = true;
-static bool firstCwnd30 = true;
+
 static void
 Cwnd_n2i0_Change (uint32_t oldval, uint32_t newval)
 {
-  if (firstCwnd20)
-  {*cWndStream_n2i0->GetStream () << "0.0 " << oldval << std::endl;
-    firstCwnd20 = false;
-  }
-  *cWndStream_n2i0->GetStream () << Simulator::Now ().GetSeconds () << " " << newval << std::endl;
+  *cWndStream_n2i0->GetStream () << Simulator::Now ().GetSeconds () << " " << (double)newval/1024 << std::endl;
 }
 
 static void
 SsThresh_n2i0_Change (uint32_t oldval, uint32_t newval)
 {
   if (first_SsThresh_n2i0)
-  {
-    first_SsThresh_n2i0 = false;
-     *ssThreshStream_n2i0->GetStream () << Simulator::Now ().GetSeconds () << "0.0" << newval << std::endl;
+  {   
+     first_SsThresh_n2i0 = false;
+     return;
   }
-  *ssThreshStream_n2i0->GetStream () << Simulator::Now ().GetSeconds () << " " << newval << std::endl;
+  *ssThreshStream_n2i0->GetStream () << Simulator::Now ().GetSeconds () << " " << (double)newval/1024 << std::endl;
 }
 
 static void
 Cwnd_n3i0_Change (uint32_t oldval, uint32_t newval)
 {
-  if (firstCwnd30)
-  {*cWndStream_n3i0->GetStream () << "0.0 " << oldval << std::endl;//Hacemos que comience en cero
-    firstCwnd30 = false;
-  }
-  *cWndStream_n3i0->GetStream () << Simulator::Now ().GetSeconds () << " " << newval << std::endl;
+  *cWndStream_n3i0->GetStream () << Simulator::Now ().GetSeconds () << " " << (double)newval/1024 << std::endl;
 }
 
 static void
@@ -62,9 +52,9 @@ SsThresh_n3i0_Change (uint32_t oldval, uint32_t newval)
   if (first_SsThresh_n3i0)
   {
     first_SsThresh_n3i0 = false;
-    *ssThreshStream_n3i0->GetStream () << Simulator::Now ().GetSeconds () << "0.0" << newval << std::endl;
+    return;
   }
-  *ssThreshStream_n3i0->GetStream () << Simulator::Now ().GetSeconds () << " " << newval << std::endl;
+  *ssThreshStream_n3i0->GetStream () << Simulator::Now ().GetSeconds () << " " << (double)(newval/1024) << std::endl;
 }
 
 static void

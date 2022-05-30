@@ -67,12 +67,12 @@ int main (int argc, char *argv[])
 
   //Este helper crea los enlaces punto a punto
   PointToPointHelper p2pNode;
-  p2pNode.SetDeviceAttribute    ("DataRate", StringValue ("100kb/s"));
+  p2pNode.SetDeviceAttribute    ("DataRate", StringValue ("150kb/s"));
   p2pNode.SetChannelAttribute   ("Delay", StringValue ("100ms"));
   p2pNode.SetQueue ("ns3::DropTailQueue", "MaxSize", StringValue ("10p"));
 
   PointToPointHelper p2pBottleNeck;
-  p2pBottleNeck.SetDeviceAttribute  ("DataRate", StringValue ("100kb/s"));
+  p2pBottleNeck.SetDeviceAttribute  ("DataRate", StringValue ("50kb/s"));
   p2pBottleNeck.SetChannelAttribute ("Delay", StringValue ("100ms"));
   p2pBottleNeck.SetQueue ("ns3::DropTailQueue", "MaxSize", StringValue ("10p"));
  
