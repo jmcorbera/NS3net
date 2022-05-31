@@ -13,8 +13,6 @@
 
 using namespace ns3;
 
-//std::string prefix_file_name = "dumbbell-tp2";
-
 static Ptr<OutputStreamWrapper> cWndStream_n2i0;
 static Ptr<OutputStreamWrapper> ssThreshStream_n2i0;
 static bool first_SsThresh_n2i0 = true;

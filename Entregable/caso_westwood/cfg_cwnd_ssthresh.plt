@@ -1,7 +1,8 @@
 set terminal png
-set output "Dumbbell-2TCP-cwnd-ssthresh.png"
-set xlabel "RTT's (seconds)"
+set output "westwood.png"
+set xlabel "Time(seconds)"
 set ylabel "Ventana de Congestion (cwnd)"
+set title "Congestion Window Plot"
 set yrange [0:12]
 set mytics 2
 set xrange [0:60]
